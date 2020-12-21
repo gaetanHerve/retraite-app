@@ -50,7 +50,6 @@ export class SuggestionsService {
   getImageUrl(path: string): Promise<string> {
     return new Promise((resolve, reject) => {
       this.storage.ref(path).getDownloadURL().subscribe(imgUrl => {
-        console.log(imgUrl);
         resolve(imgUrl);
       });
     });

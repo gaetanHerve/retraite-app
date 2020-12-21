@@ -35,35 +35,17 @@ export class SuggestionPage implements OnInit {
           a['$key'] = item.key;
           this.Suggestions.push(a as Suggestion);
         });
-        console.log('this.origin : ', this.origin);
-
-        if (this.origin === 'monsieurH') {
-          this.pageTitle = 'La suggestion de Monsieur H.';
-          this.suggestion = this.Suggestions[(this.Suggestions.length - 1)];
-          this.textLoaded = true;
-          console.log('monsieurH suggestion : ', this.suggestion);
-        } else {
-          this.pageTitle = 'La suggestion des gosses';
-          const randomNumber = Math.trunc(Math.random() * 4/*this.Suggestions.length*/);
-          this.suggestion = this.Suggestions[randomNumber];
-          this.textLoaded = true;
-        }
-
-        if (!this.suggestion.image || !this.suggestion.image.includes('/images/suggestions')) {
-          this.suggestion.image = '/images/suggestions/default-hygge.jpeg';
-        }
-        this.suggService.getImageUrl(this.suggestion.image).then((imageUrl) => {
-          this.suggestion.imageUrl = imageUrl;
-          this.imageLoaded = true;
-          console.log('this.suggestion.imageUrl : ', this.suggestion.imageUrl);
-        });
+        this.generateSuggestion();
+        this.generateTitle();
+        this.generateImage();
       });
     });
   }
 
+  // Unused ?
   fetchSuggestions() {
     this.suggService.getSuggestionList().valueChanges().subscribe(res => {
-      console.log(res);
+      // console.log(res);
     });
   }
 
@@ -76,6 +58,52 @@ export class SuggestionPage implements OnInit {
 
   goToMenu() {
     this.router.navigate(['home']);
+  }
+
+  generateSuggestion() {
+    let categorisedSuggestions = [];
+    let filteredWithDate = [];
+    let randomNumber: number;
+    this.formatDate();
+    categorisedSuggestions = this.Suggestions.filter( elem => elem.category === this.origin);
+    filteredWithDate = categorisedSuggestions.filter( elem => elem.date === this.formatDate());
+    // console.log('categorisedSuggestions before filter : ', categorisedSuggestions);
+    categorisedSuggestions = filteredWithDate.length > 0 ? filteredWithDate : categorisedSuggestions.filter( elem => elem.date == null);
+    randomNumber = Math.trunc(Math.random() * categorisedSuggestions.length);
+    this.suggestion = categorisedSuggestions[randomNumber];
+    // console.log('categorisedSuggestions after filter : ', categorisedSuggestions);
+  }
+
+  generateTitle() {
+    switch (this.origin) {
+      case 'monsieurH':
+        this.pageTitle = 'La suggestion de Monsieur H.';
+        break;
+      case 'gosses':
+        this.pageTitle = 'La suggestion des gosses';
+        break;
+      default:
+        break;
+    }
+    this.textLoaded = true;
+  }
+
+  generateImage() {
+    if (!this.suggestion.image || !this.suggestion.image.includes('/images/suggestions')) {
+      this.suggestion.image = '/images/suggestions/default-hygge.jpeg';
+    }
+    this.suggService.getImageUrl(this.suggestion.image).then((imageUrl) => {
+      this.suggestion.imageUrl = imageUrl;
+      console.log(imageUrl);
+      this.imageLoaded = true;
+    });
+  }
+
+  formatDate(): string {
+    let result: string;
+    const date = new Date(Date.now());
+    result = date.getDate() + '/' + (date.getMonth() + 1);
+    return result;
   }
 
 }
