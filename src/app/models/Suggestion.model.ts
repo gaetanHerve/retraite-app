@@ -1,5 +1,6 @@
 export class Suggestion {
     public id: number;
+    public category: string;
     public title: string;
     public image: string;
     public imageUrl: string;
@@ -14,6 +15,14 @@ export class Suggestion {
 
     setId(value: number) {
         this.id = value;
+    }
+
+    getCategory(): string {
+        return this.category;
+    }
+
+    setCategory(value: string) {
+        this.category = value;
     }
 
     getTitle(): string {
