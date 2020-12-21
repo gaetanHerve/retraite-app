@@ -1,0 +1,23 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button></ion-back-button>
+    </ion-buttons>
+    <ion-title (click)="goToMenu()"  class="font1" style="font-weight: bold">
+      Ma retraite sereine</ion-title>
+    <ion-title size="small" class="font2" style="text-align: right; margin-bottom: 2%">
+      <i>{{pageTitle}}</i>
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content  *ngIf="imageLoaded && textLoaded" [fullscreen]="true">
+  <div class="bg-img" [style.background-image]="'url('+suggestion.imageUrl+')'">
+    <div id="container" class="bg-trans font1"  style="align-items: center">
+      <strong>
+        {{ suggestion.title }}
+      </strong>
+    </div>
+  </div>
+</ion-content>
+
