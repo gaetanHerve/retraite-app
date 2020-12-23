@@ -25,12 +25,11 @@ export class SuggestionPage implements OnInit {
               private storage: Storage) {}
 
   ngOnInit() {
-    // Don't forget to remove next line !!!
-    this.storage.clear();
+    // Don't forget to comment next line !!!
+    // this.storage.clear();
     const paramToCheck = 'origin';
     this.route.queryParams.subscribe(params => {
       this.origin = params[paramToCheck];
-      this.fetchSuggestions();
       const suggRes = this.suggService.getSuggestionList();
       suggRes.snapshotChanges().subscribe(res => {
         this.Suggestions = [];
@@ -39,21 +38,13 @@ export class SuggestionPage implements OnInit {
           a['$key'] = item.key;
           this.Suggestions.push(a as Suggestion);
         });
-        this.manageSuggetionUnicity().then( (result) => {
-          console.log('promise result : ', result);
-          if (!result) {
-            this.generateSuggestion();
-          }
+        this.manageSuggestionStorage().then( () => {
+          this.generateTitle();
+          this.generateImage();
         });
-        this.generateTitle();
-        this.generateImage();
-        this.getAllFavorites();
-
       });
     });
   }
-
-
 
   // Unused ?
   fetchSuggestions() {
@@ -62,27 +53,40 @@ export class SuggestionPage implements OnInit {
     });
   }
 
-  manageSuggetionUnicity(): Promise<boolean> {
-    let suggestionMade = false;
-    let dateUsed = false;
-    let originUsed = false;
-    return new Promise( (resolve, reject) => {
+  manageSuggestionStorage(): Promise<any> {
+    return new Promise ( resolve => {
       const date = new Date(Date.now());
-      this.storage.get('date').then((val) => {
-        console.log('date in storage : ', val);
-        if (val === this.formatDate(date)) {
-          dateUsed = true;
-          this.storage.get(this.origin).then( (suggestion) => {
-            console.log('suggestion in storage : ', suggestion);
-            this.suggestion = suggestion;
-            originUsed = true;
+      const formattedDate = this.formatDate(date);
+
+      this.storage.get(formattedDate).then((storedSuggestions) => {
+        console.log('val in storage for today : ', storedSuggestions);
+        if (storedSuggestions === null) {
+          // set array with new suggestion in storage
+          this.getSuggestionFromFirebase();
+          this.storage.set(formattedDate, [this.suggestion]).then( res => {
+            console.log('result storage.set : ', res);
+            resolve();
           });
+        } else {
+          console.log('check if category exists');
+          let foundInStorage = false;
+          storedSuggestions.forEach((storedSuggestion) => {
+            if (storedSuggestion.category === this.origin) {
+              this.suggestion = storedSuggestion;
+              foundInStorage = true;
+              resolve();
+            }
+          });
+          console.log('found in storage : ', foundInStorage);
+          if (!foundInStorage) {
+            this.getSuggestionFromFirebase();
+            storedSuggestions.push(this.suggestion);
+            this.storage.set(formattedDate, storedSuggestions).then( res => {
+              console.log('added 1 suggestion to storage : ', res);
+              resolve();
+            });
+          }
         }
-        if (dateUsed && originUsed){
-          suggestionMade = true;
-        }
-        console.log('suggestionMade ? ', suggestionMade);
-        resolve(suggestionMade);
       });
     });
   }
@@ -98,7 +102,7 @@ export class SuggestionPage implements OnInit {
     this.router.navigate(['home']);
   }
 
-  generateSuggestion() {
+  getSuggestionFromFirebase() {
     const date = new Date(Date.now());
     let categorisedSuggestions = [];
     let filteredWithDate = [];
@@ -108,25 +112,6 @@ export class SuggestionPage implements OnInit {
     categorisedSuggestions = filteredWithDate.length > 0 ? filteredWithDate : categorisedSuggestions.filter( elem => elem.date == null);
     randomNumber = Math.trunc(Math.random() * categorisedSuggestions.length);
     this.suggestion = categorisedSuggestions[randomNumber];
-    this.updateStorage(date);
-  }
-
-  updateStorage(date: Date) {
-    let existingSuggestion: object;
-    let suggestionToAdd;
-    const formattedDate = this.formatDate(date);
-    /*this.storage.get(formattedDate).then( (suggestion) => {
-      console.log('suggestion in storage : ', suggestion);
-      if (suggestion !== null) {
-        existingSuggestion = suggestion;
-      }
-
-    }); */
-    // this.storage.set(formattedDate, {origin: this.origin, suggestion: this.suggestion});
-    this.storage.set(formattedDate, ['elem1', 'elem2']).then( res => {
-      console.log('result storage.set : ', res);
-    });
-    // this.storage.set(this.origin, this.suggestion);
   }
 
   generateTitle() {
@@ -159,18 +144,4 @@ export class SuggestionPage implements OnInit {
     result = date.getDate() + '/' + (date.getMonth() + 1);
     return result;
   }
-
-  getAllFavorites(){
-    const items = [];
-    return new Promise(resolve => {
-      this.storage.forEach( (v, k) => {
-        console.log('value : ', v);
-        console.log('key: ', k);
-        items.push(v);
-      }).then( () => {
-        resolve(items);
-      });
-    });
-  }
-
 }
